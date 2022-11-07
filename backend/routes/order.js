@@ -9,14 +9,26 @@ router.post("/add-items-order-table", async (req, res) => {
       userid: userId,
     });
 
-    const products = cart.products;
-    const orderedProducts = await OrderModal.create({
+    const products = cart?.products;
+    const orderedProducts = await OrderModal.findOne({
       userid: userId,
-      orders: [...products],
     });
-    res
-      .status(200)
-      .json({ msg: "Order placed successfully!", orders: orderedProducts });
+
+    if (!orderedProducts) {
+      await OrderModal.create({
+        userid: userId,
+        orders: products ? [...products] : [],
+      });
+    } else {
+      orderedProducts.orders = [...orderedProducts.orders, ...products];
+    }
+
+    console.log("Updated Products are", orderedProducts.orders);
+
+    res.status(200).json({
+      msg: "Order placed successfully!",
+      orders: orderedProducts.orders,
+    });
   } catch (err) {
     res.status(500).json({ msg: err.message });
   }
